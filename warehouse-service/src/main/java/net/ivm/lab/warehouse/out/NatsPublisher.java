@@ -27,6 +27,8 @@ public class NatsPublisher {
 
     public void publish(String message) {
         try {
+//            String json = objectMapper.writeValueAsString(data);
+//            jetStream.publish(SensorData.MESSAGE_TOPIC, json.getBytes());
             jetStream.publish(messageTopic, message.getBytes());
         } catch (Exception e) {
             log.error("Failed to publish: {}", e.getMessage());
