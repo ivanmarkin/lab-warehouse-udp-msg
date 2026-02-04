@@ -10,9 +10,13 @@ version = "1.0.0"
 java.toolchain.languageVersion.set(JavaLanguageVersion.of(21))
 application.mainClass.set("net.ivm.lab.warehouse.central.CentralServiceApp")
 
-repositories.mavenCentral()
+repositories {
+    mavenCentral()
+    mavenLocal()
+}
 
 dependencies {
+    implementation("net.ivm.lab.warehouse:commons:1.0.0")
     implementation("org.apache.commons:commons-lang3:3.20.0")
     implementation("io.nats:jnats:2.16.14")
     implementation("ch.qos.logback:logback-classic:1.5.25")
