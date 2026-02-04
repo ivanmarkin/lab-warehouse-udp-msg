@@ -8,6 +8,7 @@ import io.nats.client.Dispatcher;
 import io.nats.client.Message;
 import io.nats.client.Nats;
 import net.ivm.lab.warehouse.model.SensorData;
+import net.ivm.lab.warehouse.model.ThresholdSettings;
 import net.ivm.lab.warehouse.util.MessageConverter;
 
 import java.nio.charset.StandardCharsets;
@@ -21,6 +22,7 @@ public class MessageProcessor extends AbstractActor {
     private final LoggingAdapter log = Logging.getLogger(getContext().getSystem(), this);
 
     private final AtomicBoolean started = new AtomicBoolean(false);
+    private ThresholdSettings thresholdSettings;
 
     private Connection natsConnection;
     private Dispatcher natsDispatcher;
@@ -43,6 +45,8 @@ public class MessageProcessor extends AbstractActor {
             natsDispatcher = natsConnection.createDispatcher(this::processNatsMessage);
             natsDispatcher.subscribe(TOPIC_NAME, QUEUE_GROUP);
 
+            thresholdSettings = new ThresholdSettings(TH_TEMPERATURE, TH_HUMIDITY);
+
             started.set(true);
             log.info("MessageProcessor {} started", this);
         } catch (Exception e) {
@@ -55,11 +59,13 @@ public class MessageProcessor extends AbstractActor {
         String content = new String(msg.getData(), StandardCharsets.UTF_8);
         try {
             SensorData sensorData = MessageConverter.parseSensorMessage(content);
-            if (sensorData.exceedsThreshold()) {
-                log.error(MessageConverter.thresholdExceededAlert(sensorData));
+            double threshold = thresholdSettings.getThresholdFor(sensorData.sensorType());
+            if (sensorData.value() > threshold) {
+                log.error(String.format("!!!Alarm: exceeded %s threshold of %s. Sensor ID=%s, value=%s",
+                        sensorData.sensorType().name(), threshold, sensorData.sensorId(), sensorData.value()));
             }
         } catch (Exception e) {
-            log.error("Failed to parse sensor message: {}\n {}" ,content , e);
+            log.error("Failed to parse sensor message: {}\n {}", content, e);
         }
     }
 
